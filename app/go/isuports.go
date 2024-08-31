@@ -1413,7 +1413,7 @@ LIMIT 100 OFFSET ?
 		r := scoredPlayerSet[p.ID]
 		r.PlayerDisplayName = p.DisplayName
 		pagedRanks = append(pagedRanks, CompetitionRank{
-			Rank:              rankAfter + int64(i),
+			Rank:              rankAfter + int64(i) + 1,
 			Score:             r.Score,
 			PlayerID:          r.PlayerID,
 			PlayerDisplayName: r.PlayerDisplayName,
