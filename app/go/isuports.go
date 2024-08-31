@@ -157,7 +157,12 @@ func Run() {
 	}
 	defer sqlLogger.Close()
 
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			// 成功レスポンスはログに残さない
+			return c.Response().Status != 200
+		},
+	}))
 	e.Use(middleware.Recover())
 	e.Use(SetCacheControlPrivate)
 
