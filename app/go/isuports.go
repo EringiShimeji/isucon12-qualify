@@ -1616,6 +1616,9 @@ func initializeHandler(c echo.Context) error {
 	res := InitializeHandlerResult{
 		Lang: "go",
 	}
-	http.Get("http://localhost:9000/api/group/collect")
+	_, err = http.Get("http://localhost:9000/api/group/collect")
+	if err != nil {
+		log.Errorf("failed to request pprotein: %w", err)
+	}
 	return c.JSON(http.StatusOK, SuccessResult{Status: true, Data: res})
 }
