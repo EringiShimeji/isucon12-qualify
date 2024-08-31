@@ -1383,6 +1383,22 @@ LIMIT 100 OFFSET ?
 	); err != nil {
 		return fmt.Errorf("error Select player_score: tenantID=%d, competitionID=%s, %w", tenant.ID, competitionID, err)
 	}
+
+	if len(pss) == 0 {
+		res := SuccessResult{
+			Status: true,
+			Data: CompetitionRankingHandlerResult{
+				Competition: CompetitionDetail{
+					ID:         competition.ID,
+					Title:      competition.Title,
+					IsFinished: competition.FinishedAt.Valid,
+				},
+				Ranks: make([]CompetitionRank, 0, 100),
+			},
+		}
+		return c.JSON(http.StatusOK, res)
+	}
+
 	scoredPlayerSet := make(map[string]CompetitionRank, len(pss))
 	scoredPlayerIdList := make([]string, 0)
 	for _, ps := range pss {
