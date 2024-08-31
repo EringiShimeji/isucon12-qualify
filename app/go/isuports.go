@@ -160,7 +160,7 @@ func Run() {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Skipper: func(c echo.Context) bool {
 			// 成功レスポンスはログに残さない
-			return c.Response().Status != 200
+			return c.Response().Status == http.StatusOK
 		},
 	}))
 	e.Use(middleware.Recover())
