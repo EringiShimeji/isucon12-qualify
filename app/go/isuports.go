@@ -1379,7 +1379,7 @@ FROM (
 	WHERE tenant_id = ? AND competition_id = ?
 ) AS tmp
 WHERE rn = 1
-ORDER BY score DESC
+ORDER BY score DESC, row_num
 LIMIT 100 OFFSET ?
 `,
 		tenant.ID,
