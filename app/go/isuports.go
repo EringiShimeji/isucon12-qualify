@@ -1372,7 +1372,7 @@ func competitionRankingHandler(c echo.Context) error {
 		ctx,
 		&pss,
 		`
-SELECT *
+SELECT id, tenant_id, player_id, competition_id, score, row_num, created_at, updated_at
 FROM (
 	SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY row_num DESC) AS rn
 	FROM player_score
