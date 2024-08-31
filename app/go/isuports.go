@@ -1377,9 +1377,9 @@ FROM (
 	SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY row_num DESC) AS rn
 	FROM player_score
 	WHERE tenant_id = ? AND competition_id = ?
-	ORDER BY score DESC
 ) AS tmp
 WHERE rn = 1
+ORDER BY score DESC
 LIMIT 100 OFFSET ?
 `,
 		tenant.ID,
