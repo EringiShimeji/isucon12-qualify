@@ -566,7 +566,7 @@ func billingReportByCompetition(ctx context.Context, tenantDB dbOrTx, tenantID i
 	if err != nil {
 		return nil, fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Commit()
 
 	// スコアを登録した参加者のIDを取得する
 	scoredPlayerIDs := []string{}
@@ -581,9 +581,6 @@ func billingReportByCompetition(ctx context.Context, tenantDB dbOrTx, tenantID i
 	for _, pid := range scoredPlayerIDs {
 		// スコアが登録されている参加者
 		billingMap[pid] = "player"
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("error Commit: %w", err)
 	}
 
 	// 大会が終了している場合のみ請求金額が確定するので計算する
@@ -1048,7 +1045,7 @@ func competitionScoreHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Commit()
 
 	var rowNum int64
 	playerScoreRows := []PlayerScoreRow{}
@@ -1119,9 +1116,6 @@ func competitionScoreHandler(c echo.Context) error {
 			)
 
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error Commit: %w", err)
 	}
 
 	return c.JSON(http.StatusOK, SuccessResult{
@@ -1240,7 +1234,7 @@ func playerHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Commit()
 
 	pss := make([]PlayerScoreRow, 0, len(cs))
 	for _, c := range cs {
@@ -1273,9 +1267,6 @@ func playerHandler(c echo.Context) error {
 			CompetitionTitle: comp.Title,
 			Score:            ps.Score,
 		})
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error Commit: %w", err)
 	}
 
 	res := SuccessResult{
@@ -1372,7 +1363,7 @@ func competitionRankingHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Commit()
 
 	pss := []PlayerScoreRow{}
 	if err := tx.SelectContext(
@@ -1397,9 +1388,6 @@ LIMIT 100 OFFSET ?
 	}
 
 	if len(pss) == 0 {
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("error Commit: %w", err)
-		}
 		res := SuccessResult{
 			Status: true,
 			Data: CompetitionRankingHandlerResult{
@@ -1434,10 +1422,6 @@ LIMIT 100 OFFSET ?
 		return fmt.Errorf("error Select player: %w", err)
 	}
 	scoredPlayersMap := make(map[string]PlayerRow, len(scoredPlayers))
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error Commit: %w", err)
-	}
 
 	pagedRanks := make([]CompetitionRank, 0, 100)
 	for i, id := range scoredPlayerIdList {
