@@ -1407,11 +1407,12 @@ LIMIT 100 OFFSET ?
 	if err := tenantDB.SelectContext(ctx, &scoredPlayers, q, a...); err != nil {
 		return fmt.Errorf("error Select player: %w", err)
 	}
+	scoredPlayersMap := make(map[string]PlayerRow, len(scoredPlayers))
 
 	pagedRanks := make([]CompetitionRank, 0, 100)
-	for i, p := range scoredPlayers {
-		r := scoredPlayerSet[p.ID]
-		r.PlayerDisplayName = p.DisplayName
+	for i, id := range scoredPlayerIdList {
+		r := scoredPlayerSet[id]
+		r.PlayerDisplayName = scoredPlayersMap[id].DisplayName
 		pagedRanks = append(pagedRanks, CompetitionRank{
 			Rank:              rankAfter + int64(i) + 1,
 			Score:             r.Score,
