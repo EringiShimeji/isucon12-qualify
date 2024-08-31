@@ -1379,25 +1379,37 @@ func competitionRankingHandler(c echo.Context) error {
 		return fmt.Errorf("error Select player_score: tenantID=%d, competitionID=%s, %w", tenant.ID, competitionID, err)
 	}
 	ranks := make([]CompetitionRank, 0, len(pss))
-	scoredPlayerSet := make(map[string]struct{}, len(pss))
+	scoredPlayerSet := make(map[string]CompetitionRank, len(pss))
+	scoredPlayerIdList := make([]string, 0)
 	for _, ps := range pss {
 		// player_scoreが同一player_id内ではrow_numの降順でソートされているので
 		// 現れたのが2回目以降のplayer_idはより大きいrow_numでスコアが出ているとみなせる
 		if _, ok := scoredPlayerSet[ps.PlayerID]; ok {
 			continue
 		}
-		scoredPlayerSet[ps.PlayerID] = struct{}{}
-		p, err := retrievePlayer(ctx, tenantDB, ps.PlayerID)
-		if err != nil {
-			return fmt.Errorf("error retrievePlayer: %w", err)
+		scoredPlayerSet[ps.PlayerID] = CompetitionRank{
+			Score:    ps.Score,
+			PlayerID: ps.PlayerID,
+			//PlayerDisplayName: p.DisplayName,
+			RowNum: ps.RowNum,
 		}
-		ranks = append(ranks, CompetitionRank{
-			Score:             ps.Score,
-			PlayerID:          p.ID,
-			PlayerDisplayName: p.DisplayName,
-			RowNum:            ps.RowNum,
-		})
+		scoredPlayerIdList = append(scoredPlayerIdList, ps.PlayerID)
 	}
+
+	var scoredPlayers []PlayerRow
+	q, a, err := sqlx.In("SELECT * FROM player WHERE id IN (?)", scoredPlayerIdList)
+	if err != nil {
+		return fmt.Errorf("error Select player failed to generate in query: %w", err)
+	}
+	if err := tenantDB.SelectContext(ctx, &scoredPlayers, q, a...); err != nil {
+		return fmt.Errorf("error Select player: %w", err)
+	}
+	for _, p := range scoredPlayers {
+		r := scoredPlayerSet[p.ID]
+		r.PlayerDisplayName = p.DisplayName
+		ranks = append(ranks, r)
+	}
+
 	sort.Slice(ranks, func(i, j int) bool {
 		if ranks[i].Score == ranks[j].Score {
 			return ranks[i].RowNum < ranks[j].RowNum
