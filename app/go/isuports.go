@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1372,26 +1371,26 @@ func competitionRankingHandler(c echo.Context) error {
 	if err := tenantDB.SelectContext(
 		ctx,
 		&pss,
-		"SELECT * FROM player_score WHERE tenant_id = ? AND competition_id = ? ORDER BY row_num DESC",
+		`
+SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY row_num DESC) AS r
+FROM player_score
+WHERE tenant_id = ? AND competition_id = ? AND r = 1
+ORDER BY score DESC
+OFFSET ? LIMIT 100
+`,
 		tenant.ID,
 		competitionID,
+		rankAfter,
 	); err != nil {
 		return fmt.Errorf("error Select player_score: tenantID=%d, competitionID=%s, %w", tenant.ID, competitionID, err)
 	}
-	ranks := make([]CompetitionRank, 0, len(pss))
 	scoredPlayerSet := make(map[string]CompetitionRank, len(pss))
 	scoredPlayerIdList := make([]string, 0)
 	for _, ps := range pss {
-		// player_scoreが同一player_id内ではrow_numの降順でソートされているので
-		// 現れたのが2回目以降のplayer_idはより大きいrow_numでスコアが出ているとみなせる
-		if _, ok := scoredPlayerSet[ps.PlayerID]; ok {
-			continue
-		}
 		scoredPlayerSet[ps.PlayerID] = CompetitionRank{
 			Score:    ps.Score,
 			PlayerID: ps.PlayerID,
-			//PlayerDisplayName: p.DisplayName,
-			RowNum: ps.RowNum,
+			RowNum:   ps.RowNum,
 		}
 		scoredPlayerIdList = append(scoredPlayerIdList, ps.PlayerID)
 	}
@@ -1404,32 +1403,17 @@ func competitionRankingHandler(c echo.Context) error {
 	if err := tenantDB.SelectContext(ctx, &scoredPlayers, q, a...); err != nil {
 		return fmt.Errorf("error Select player: %w", err)
 	}
-	for _, p := range scoredPlayers {
+
+	pagedRanks := make([]CompetitionRank, 0, 100)
+	for i, p := range scoredPlayers {
 		r := scoredPlayerSet[p.ID]
 		r.PlayerDisplayName = p.DisplayName
-		ranks = append(ranks, r)
-	}
-
-	sort.Slice(ranks, func(i, j int) bool {
-		if ranks[i].Score == ranks[j].Score {
-			return ranks[i].RowNum < ranks[j].RowNum
-		}
-		return ranks[i].Score > ranks[j].Score
-	})
-	pagedRanks := make([]CompetitionRank, 0, 100)
-	for i, rank := range ranks {
-		if int64(i) < rankAfter {
-			continue
-		}
 		pagedRanks = append(pagedRanks, CompetitionRank{
-			Rank:              int64(i + 1),
-			Score:             rank.Score,
-			PlayerID:          rank.PlayerID,
-			PlayerDisplayName: rank.PlayerDisplayName,
+			Rank:              rankAfter + int64(i),
+			Score:             r.Score,
+			PlayerID:          r.PlayerID,
+			PlayerDisplayName: r.PlayerDisplayName,
 		})
-		if len(pagedRanks) >= 100 {
-			break
-		}
 	}
 
 	res := SuccessResult{
