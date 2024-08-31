@@ -27,7 +27,6 @@ tasks:
     cmds:
       - task: build
       - ./assets/distribute_config.sh
-      - sudo systemctl daemon-reload
       - task: restart-all
       - task: reload-sysctl
       - truncate -s 0 {{.SQLITE_TRACE_LOG}}
@@ -73,11 +72,15 @@ tasks:
 
   restart:
     desc: Restart specified services
+    deps:
+      - daemon-reload
     cmds:
       - sudo systemctl restart {{.CLI_ARGS}}
 
   restart-all:
     desc: Restart all services related to the application
+    deps:
+      - daemon-reload
     cmds:
       - sudo systemctl restart {{.SERVICES}}
 
@@ -97,6 +100,9 @@ tasks:
   ####################
   #     Internal     #
   ####################
+  daemon-reload:
+    - sudo systemctl daemon-reload
+
   aggregate-trace:
     - |
       jq -s '
