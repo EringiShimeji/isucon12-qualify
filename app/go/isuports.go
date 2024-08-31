@@ -84,7 +84,7 @@ func connectToTenantDB(id int64) (*sqlx.DB, error) {
 	}
 
 	// デフォルトだとロックされててると即座に失敗する?
-	_, err = db.Exec("PRAGMA busy_timeout=1000;")
+	_, err = db.Exec("PRAGMA busy_timeout=100000;")
 	if err != nil {
 		return nil, fmt.Errorf("failed to set busy_timeout: %w", err)
 	}
