@@ -554,7 +554,6 @@ func billingReportByCompetition(ctx context.Context, tenantDB dbOrTx, tenantID i
 	if err != nil {
 		return nil, fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
 
 	// スコアを登録した参加者のIDを取得する
 	scoredPlayerIDs := []string{}
@@ -1036,7 +1035,6 @@ func competitionScoreHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
 
 	var rowNum int64
 	playerScoreRows := []PlayerScoreRow{}
@@ -1228,7 +1226,6 @@ func playerHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
 
 	pss := make([]PlayerScoreRow, 0, len(cs))
 	for _, c := range cs {
@@ -1360,7 +1357,6 @@ func competitionRankingHandler(c echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("error BeginTxx: %w", err)
 	}
-	defer tx.Rollback()
 
 	pss := []PlayerScoreRow{}
 	if err := tx.SelectContext(
