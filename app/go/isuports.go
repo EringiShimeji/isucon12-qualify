@@ -1372,10 +1372,14 @@ func competitionRankingHandler(c echo.Context) error {
 		ctx,
 		&pss,
 		`
-SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY row_num DESC) AS r
-FROM player_score
-WHERE tenant_id = ? AND competition_id = ? AND r = 1
-ORDER BY score DESC
+SELECT *
+FROM (
+	SELECT *, ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY row_num DESC) AS rn
+	FROM player_score
+	WHERE tenant_id = ? AND competition_id = ?
+	ORDER BY score DESC
+) AS tmp
+WHERE rn = 1
 LIMIT 100 OFFSET ?
 `,
 		tenant.ID,
