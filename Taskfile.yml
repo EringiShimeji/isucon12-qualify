@@ -2,6 +2,9 @@
 # https://taskfile.dev
 version: "3"
 
+dotenv:
+  - .env
+
 vars:
   # Frequently changed
   SERVICES: mysql nginx
@@ -9,6 +12,8 @@ vars:
   SRC_DIR: /home/isucon/repo/app/go
 
   # Rarely changed
+  SQLITE_TRACE_LOG: /home/isucon/tmp/trace.log
+  SQLITE_TRACE_LOG_SORTED: /home/isucon/tmp/sqlite-slow.json
 
 tasks:
   ####################
@@ -25,6 +30,7 @@ tasks:
       - sudo systemctl daemon-reload
       - task: restart-all
       - task: reload-sysctl
+      - truncate -s 0 {{.SQLITE_TRACE_LOG}}
 
   build:
     desc: Build the application
@@ -80,6 +86,27 @@ tasks:
     cmds:
       - sudo sysctl -p
 
+  # DISCORD_WEBHOOK はホストに手動で配置しました
+  send-trace:
+    desc: Send SQLite trace log to Discord
+    cmds:
+      - task: aggregate-trace
+      - http -f "$DISCORD_WEBHOOK" file@{{.SQLITE_TRACE_LOG_SORTED}}
+
   ####################
   #     Internal     #
   ####################
+  aggregate-trace:
+    - |
+      jq -s '
+        group_by(.statement) |
+        map({
+          statement: .[0].statement,
+          count: length,
+          total_time: (map(.query_time) | add)
+        }) |
+        sort_by(-.total_time) |
+        .[:10]
+      '
+      < {{.SQLITE_TRACE_LOG}}
+      > {{.SQLITE_TRACE_LOG_SORTED}}
