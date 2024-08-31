@@ -94,9 +94,7 @@ tasks:
     desc: Send SQLite trace log to Discord
     cmds:
       - task: aggregate-trace
-        silent: true
-      - cmd: http -f "$DISCORD_WEBHOOK" file@{{.SQLITE_TRACE_LOG_SORTED}}
-        silent: true
+      - http -f "$DISCORD_WEBHOOK" file@{{.SQLITE_TRACE_LOG_SORTED}} > /dev/null
 
   ####################
   #     Internal     #
