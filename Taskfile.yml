@@ -92,10 +92,9 @@ tasks:
   # DISCORD_WEBHOOK はホストに手動で配置しました
   send-trace:
     desc: Send SQLite trace log to Discord
-    silent: true
     cmds:
       - task: aggregate-trace
-      - http -f "$DISCORD_WEBHOOK" file@{{.SQLITE_TRACE_LOG_SORTED}}
+      - http -f "$DISCORD_WEBHOOK" file@{{.SQLITE_TRACE_LOG_SORTED}} > /dev/null
 
   ####################
   #     Internal     #
