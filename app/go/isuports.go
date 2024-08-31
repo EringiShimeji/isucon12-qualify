@@ -1397,6 +1397,9 @@ LIMIT 100 OFFSET ?
 	}
 
 	if len(pss) == 0 {
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("error Commit: %w", err)
+		}
 		res := SuccessResult{
 			Status: true,
 			Data: CompetitionRankingHandlerResult{
