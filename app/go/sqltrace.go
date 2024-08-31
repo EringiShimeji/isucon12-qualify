@@ -112,8 +112,8 @@ func traceLogPostQuery(_ context.Context, ctx interface{}, stmt *proxy.Stmt, arg
 	return nil
 }
 
-// (?, ?, ...) -> (?)
+// (?, ?, ...) -> (...)
 func replacePlaceholders(stmt string) string {
 	re := regexp.MustCompile(`\([?\s,]+\)`)
-	return re.ReplaceAllString(stmt, "(?)")
+	return re.ReplaceAllString(stmt, "(...)")
 }
