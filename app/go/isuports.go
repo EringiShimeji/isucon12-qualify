@@ -1616,5 +1616,6 @@ func initializeHandler(c echo.Context) error {
 	res := InitializeHandlerResult{
 		Lang: "go",
 	}
+	http.Get("http://localhost:9000/api/group/collect")
 	return c.JSON(http.StatusOK, SuccessResult{Status: true, Data: res})
 }
