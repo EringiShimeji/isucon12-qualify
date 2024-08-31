@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -71,9 +72,11 @@ func traceLogPostExec(_ context.Context, ctx interface{}, stmt *proxy.Stmt, args
 		}
 	}
 
+	statement := replacePlaceholders(stmt.QueryString)
+
 	log := sqlTraceLog{
 		Time:         starts.Format(time.RFC3339),
-		Statement:    stmt.QueryString,
+		Statement:    statement,
 		Args:         argsValues,
 		QueryTime:    queryTime.Seconds(),
 		AffectedRows: affected,
@@ -95,9 +98,10 @@ func traceLogPostQuery(_ context.Context, ctx interface{}, stmt *proxy.Stmt, arg
 	for _, arg := range args {
 		argsValues = append(argsValues, arg.Value)
 	}
+	statement := replacePlaceholders(stmt.QueryString)
 	log := sqlTraceLog{
 		Time:         starts.Format(time.RFC3339),
-		Statement:    stmt.QueryString,
+		Statement:    statement,
 		Args:         argsValues,
 		QueryTime:    queryTime.Seconds(),
 		AffectedRows: 0,
@@ -106,4 +110,10 @@ func traceLogPostQuery(_ context.Context, ctx interface{}, stmt *proxy.Stmt, arg
 		return fmt.Errorf("error encode.Encode at traceLogPostQuery: %w", err)
 	}
 	return nil
+}
+
+// (?, ?, ...) -> (?)
+func replacePlaceholders(stmt string) string {
+	re := regexp.MustCompile(`\([?\s,]+\)`)
+	return re.ReplaceAllString(stmt, "(?)")
 }
